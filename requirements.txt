@@ -1,0 +1,5 @@
+requirements
+streamlit
+tensorflow
+pillow
+numpy
