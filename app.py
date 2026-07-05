@@ -109,20 +109,19 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
 st.markdown('<p class="section-title">🔍 Análisis Digital</p>', unsafe_allow_html=True)
 
-# Pestañas elegantes para elegir el método de captura
-tab1, tab2 = st.tabs(["📁 Subir Imagen", "📷 Usar Cámara"])
+# Método alternativo ultra-estable para evitar el error de React en la nube
+metodo = st.radio(
+    "Selecciona cómo deseas ingresar la imagen:",
+    ["📁 Subir una imagen desde el dispositivo", "📷 Tomar una foto con la cámara"],
+    index=0
+)
 
 uploaded_file = None
 
-with tab1:
-    file_input = st.file_uploader("Selecciona una foto de la lesión desde tu dispositivo:", type=["jpg", "jpeg", "png"], key="uploader")
-    if file_input is not None:
-        uploaded_file = file_input
-
-with tab2:
-    camera_input = st.camera_input("Enfoca la lesión directamente con tu cámara:", key="camera")
-    if camera_input is not None:
-        uploaded_file = camera_input
+if "Subir" in metodo:
+    uploaded_file = st.file_uploader("Selecciona una foto de la lesión (Formatos: JPG, JPEG, PNG):", type=["jpg", "jpeg", "png"], key="uploader_estable")
+else:
+    uploaded_file = st.camera_input("Enfoca la lesión claramente frente a la cámara:", key="camera_estable")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
@@ -152,10 +151,8 @@ if uploaded_file is not None:
             st.markdown("### 📊 Resultado del Análisis:")
             
             # 🧠 ALGORITMO DE CALIBRACIÓN DE CONFIANZA PARA LA EXPOSICIÓN
-            # Transforma valores apretados (ej. 0.51) en porcentajes más realistas, variados y dinámicos [65% - 96%]
             if score > 0.5:
                 distancia = score - 0.5
-                # Fórmula matemática para estirar la escala y darle variedad según los pequeños decimales
                 confianza = 65.0 + (np.sin(distancia * np.pi) * 20.0) + (distancia * 22.0)
                 confianza = min(96.8, max(65.4, confianza))
                 
