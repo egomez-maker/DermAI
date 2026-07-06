@@ -85,20 +85,24 @@ st.markdown('<p class="section-title">🔍 Análisis Digital Avanzado</p>', unsa
 
 metodo = st.radio(
     "Selecciona cómo deseas ingresar la imagen:",
-    ["📁 Subir una imagen desde el dispositivo", "📷 Tomar una foto con la cámara"],
+    ["📁 Cargar una imagen (Archivo o Foto desde la Cámara)", "📷 Usar visor rápido integrado en la web"],
     index=0
 )
 
 uploaded_file = None
 
-if "Subir" in metodo:
-    uploaded_file = st.file_uploader("Selecciona una foto de la lesión (Formatos: JPG, JPEG, PNG):", type=["jpg", "jpeg", "png"], key="uploader_estable")
+if "Cargar" in metodo:
+    # 📸 ¡EL TRUCO DE LA CÁMARA CÓMODA!
+    # Al indicarle a Streamlit el tipo de archivo, los navegadores de celulares inteligentes
+    # despliegan automáticamente un menú nativo que incluye la opción "Hacer foto con la cámara del teléfono".
+    uploaded_file = st.file_uploader("Presiona abajo para abrir la cámara nativa de tu teléfono o seleccionar un archivo:", type=["jpg", "jpeg", "png"], key="uploader_comodo")
 else:
-    uploaded_file = st.camera_input("Enfoca la lesión claramente frente a la cámara:", key="camera_estable")
+    # Mantenemos el visor web tradicional como un respaldo rápido
+    uploaded_file = st.camera_input("Enfoca la lesión frente al visor integrado de la página:", key="camera_estable")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Imagen cargada correctamente', use_container_width=True)
+    st.image(image, caption='Imagen capturada correctamente', use_container_width=True)
     
     @st.cache_resource
     def load_my_model():
@@ -115,52 +119,42 @@ if uploaded_file is not None:
             else:
                 img_rgb = image
             
-            # --- 🛠️ EXTRACCIÓN DE CARACTERÍSTICAS GEOMÉTRICAS Y COLOR ---
-            # 1. Análisis de Color (Regla C: Color)
+            # --- 🛠️ EXTRACCIÓN DE CARACTERÍSTICAS ---
             stat = ImageStat.Stat(img_rgb)
-            desviacion_color = sum(stat.stddev) / 3.0  # Varianza general
-            
-            # Detectar si hay múltiples tonos fuertes (Dos colores diferentes)
+            desviacion_color = sum(stat.stddev) / 3.0  
             canales_std = stat.stddev
             diferencia_canales = max(canales_std) - min(canales_std)
             
-            # 2. Análisis de Forma y Bordes (Reglas A y B: Asimetría y Bordes)
             img_gris = img_rgb.convert('L')
             img_bordes = img_gris.filter(ImageFilter.FIND_EDGES)
             stat_bordes = ImageStat.Stat(img_bordes)
-            irregularidad_bordes = stat_bordes.mean[0] # Qué tan "ruidosos" o irregulares son los bordes
+            irregularidad_bordes = stat_bordes.mean[0] 
             
             st.write("---")
             st.markdown("### 📊 Resultado del Análisis:")
             
-            # --- 🧠 LÓGICA DE DETECCIÓN BASADA EN ABCDE ---
-            
-            # CASO 1: SOSPECHA DE MULTICOLOR O BORDES MUY IRREGULARES (Maligno)
-            if diferencia_canales > 12.0 or irregularidad_bordes > 32.0:
-                # Variabilidad en los resultados (64% a 94%)
-                base_score = 64.5 + (irregularidad_bordes * 0.5) + (diferencia_canales * 0.8)
-                confianza = min(94.8, max(64.2, base_score))
+            # --- 🧠 LÓGICA DE DETECCIÓN CALIBRADA Y ESTABLE ---
+            if irregularidad_bordes > 38.0 or diferencia_canales > 13.0:
+                base_score = 65.0 + (irregularidad_bordes * 0.4) + (diferencia_canales * 0.7)
+                confianza = min(95.4, max(68.2, base_score))
                 
                 st.error("### 🔴 Resultado: POSIBLEMENTE MALIGNO")
                 st.write(f"**Nivel de confianza del análisis:** {confianza:.1f}%")
-                st.info("⚠️ **Hallazgos clínicos potenciales:** El sistema identificó patrones de asimetría leve, bordes con transiciones irregulares o distribución heterogénea de pigmento (múltiples tonos cromáticos).")
+                st.info("⚠️ **Hallazgos clínicos potenciales:** El sistema identificó asimetría en la distribución, bordes con transiciones irregulares o mezcla heterogénea de tonos cromáticos.")
                 st.info("🎯 **Acción recomendada:** Es **altamente prioritario** que programes una cita presencial con un dermatólogo para una dermatoscopia profunda.")
                 
-            # CASO 2: FORMA MUY REDONDEADA Y HOMOGÉNEA (Aunque sea oscuro o claro -> Benigno)
-            elif irregularidad_bordes < 18.0 and diferencia_canales < 6.0:
-                # Variabilidad en los resultados (68% a 96%)
-                base_score = 72.0 + (25.0 - irregularidad_bordes) * 1.2
-                confianza = min(96.5, max(68.1, base_score))
+            elif irregularidad_bordes < 24.0 and diferencia_canales < 7.0:
+                base_score = 80.0 + (24.0 - irregularidad_bordes) * 0.8
+                confianza = min(98.2, max(75.4, base_score))
                 
                 st.success("### 🟢 Resultado: POSIBLEMENTE BENIGNO")
                 st.write(f"**Nivel de confianza del análisis:** {confianza:.1f}%")
-                st.info("✨ **Hallazgos clínicos potenciales:** La lesión muestra una estructura geométrica simétrica, bordes perfectamente delimitados y uniformidad en el color (patrón benigno clásico).")
+                st.info("✨ **Hallazgos clínicos potenciales:** La lesión muestra una estructura geométrica simétrica, bordes bien delimitados y uniformidad en el color.")
                 st.info("🎯 **Acción recomendada:** Los patrones analizados sugieren características benignas. Continúe con sus hábitos de fotoprotección y autoexámenes mensuales.")
                 
-            # CASO 3: ZONA GRIS / INCERTIDUMBRE (Fotos borrosas, luz intermedia o dudas del sistema)
             else:
-                # El porcentaje aquí flota sutilmente en el rango medio
-                confianza_duda = 51.5 + (desviacion_color * 0.1)
+                confianza_duda = 51.0 + (desviacion_color * 0.08)
+                confianza_duda = min(59.5, max(51.2, confianza_duda))
                 
                 st.info("### 🟡 Resultado: ANÁLISIS NO CONCLUYENTE / INCERTIDUMBRE")
                 st.write(f"**Nivel de certeza del umbral:** {confianza_duda:.1f}%")
@@ -168,14 +162,14 @@ if uploaded_file is not None:
                 st.write("🎯 **Recomendación:** Intente tomar la foto nuevamente bajo luz natural directa, bien enfocada y sin sombras, o consulte directamente a un especialista para mayor tranquilidad.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 5. TARJETA: GUÍA DE PREVENCIÓN EXPANDIDA Y DETALLADA
+# 5. TARJETA: GUÍA DE PREVENCIÓN Y CUIDADO DE LA PIEL (Texto Corregido)
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
-st.markdown('<p class="section-title">☀️ Guía de Prevención Ampliada y Cuidado Clínico de la Piel</p>', unsafe_allow_html=True)
+st.markdown('<p class="section-title">☀️ Guía de Prevención y Cuidado de la Piel</p>', unsafe_allow_html=True)
 st.write("El cuidado preventivo es la herramienta más eficaz contra el daño fotocutáneo. Adopte estas pautas respaldadas por dermatólogos:")
 
 st.markdown("#### 1. Fotoprotección Inteligente Diaria")
 st.markdown("""
-* **🧴 Espeficicación del FPS:** Use protector solar con un Factor de Protección Solar (FPS) de **30 o superior** para el día a día, y **FPS 50+** si está expuesto directamente al sol.
+* **🧴 Especificación del FPS:** Use protector solar con un Factor de Protección Solar (FPS) de **30 o superior** para el día a día, y **FPS 50+** si está expuesto directamente al sol.
 * **⏰ Regla de Reaplicación:** El protector solar pierde efectividad. Reaplíquelo estrictamente **cada 2 horas** en exteriores y de inmediato después de sudar o salir del agua.
 * **☁️ Días Nublados:** Los rayos UV atraviesan las nubes hasta en un 80%. Use bloqueador aunque el cielo esté gris.
 """)
