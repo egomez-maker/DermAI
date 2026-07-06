@@ -79,30 +79,20 @@ st.markdown('<p class="app-subtitle">Asistente Digital de Cribado de Lesiones Cu
 st.warning("⚠️ **AVISO IMPORTANTE:** Esta aplicación es únicamente para fines informativos y de orientación clínica preliminar. **NO** sustituye el diagnóstico de un médico especialista.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 4. TARJETA DE ACCIÓN
+# 4. TARJETA DE ACCIÓN (Simplificada al Máximo)
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
 st.markdown('<p class="section-title">🔍 Análisis Digital Avanzado</p>', unsafe_allow_html=True)
 
-metodo = st.radio(
-    "Selecciona cómo deseas ingresar la imagen:",
-    ["📁 Cargar una imagen (Archivo o Foto desde la Cámara)", "📷 Usar visor rápido integrado en la web"],
-    index=0
+# Cargamos directamente el uploader que maneja archivos y cámara nativa
+uploaded_file = st.file_uploader(
+    "Presiona abajo para abrir la cámara de tu teléfono o seleccionar una foto:", 
+    type=["jpg", "jpeg", "png"], 
+    key="uploader_unico"
 )
-
-uploaded_file = None
-
-if "Cargar" in metodo:
-    # 📸 ¡EL TRUCO DE LA CÁMARA CÓMODA!
-    # Al indicarle a Streamlit el tipo de archivo, los navegadores de celulares inteligentes
-    # despliegan automáticamente un menú nativo que incluye la opción "Hacer foto con la cámara del teléfono".
-    uploaded_file = st.file_uploader("Presiona abajo para abrir la cámara nativa de tu teléfono o seleccionar un archivo:", type=["jpg", "jpeg", "png"], key="uploader_comodo")
-else:
-    # Mantenemos el visor web tradicional como un respaldo rápido
-    uploaded_file = st.camera_input("Enfoca la lesión frente al visor integrado de la página:", key="camera_estable")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Imagen capturada correctamente', use_container_width=True)
+    st.image(image, caption='Imagen cargada correctamente', use_container_width=True)
     
     @st.cache_resource
     def load_my_model():
@@ -162,7 +152,7 @@ if uploaded_file is not None:
                 st.write("🎯 **Recomendación:** Intente tomar la foto nuevamente bajo luz natural directa, bien enfocada y sin sombras, o consulte directamente a un especialista para mayor tranquilidad.")
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 5. TARJETA: GUÍA DE PREVENCIÓN Y CUIDADO DE LA PIEL (Texto Corregido)
+# 5. TARJETA: GUÍA DE PREVENCIÓN Y CUIDADO DE LA PIEL
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
 st.markdown('<p class="section-title">☀️ Guía de Prevención y Cuidado de la Piel</p>', unsafe_allow_html=True)
 st.write("El cuidado preventivo es la herramienta más eficaz contra el daño fotocutáneo. Adopte estas pautas respaldadas por dermatólogos:")
