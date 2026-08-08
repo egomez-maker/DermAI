@@ -2,6 +2,7 @@ import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageStat, ImageFilter
 import numpy as np
+import streamlit.components.v1 as components
 
 # 1. CONFIGURACIÓN DE LA PÁGINA
 st.set_page_config(page_title="DermAI", page_icon="🩺", layout="centered")
@@ -80,7 +81,7 @@ st.markdown('<p class="app-subtitle">Asistente Digital de Cribado de Lesiones Cu
 # Aviso Importante Médico
 st.warning("⚠️ **AVISO IMPORTANTE:** Esta aplicación es únicamente para fines informativos y de orientación clínica preliminar. **NO** sustituye el diagnóstico de un médico especialista.")
 
-# 🔍 NUEVA SECCIÓN: EXPLICACIÓN DE USO E INTRODUCCIÓN (Agregada justo abajo del aviso)
+# EXPLICACIÓN DE USO E INTRODUCCIÓN
 st.markdown("""
 <div style="background-color: #EFF6FF; padding: 20px; border-radius: 12px; border: 1px solid #BFDBFE; margin-top: 15px;">
     <p style="color: #1E3A8A; font-size: 18px; font-weight: 700; margin-top: 0px; margin-bottom: 8px;">📘 ¿Qué es DermAI y cómo se utiliza?</p>
@@ -128,7 +129,7 @@ if uploaded_file is not None:
             else:
                 img_rgb = image
             
-            # --- 🛠️ EXTRACCIÓN DE CARACTERÍSTICAS (Mismo motor visual tuyo) ---
+            # --- EXTRACCIÓN DE CARACTERÍSTICAS ---
             stat = ImageStat.Stat(img_rgb)
             desviacion_color = sum(stat.stddev) / 3.0  
             canales_std = stat.stddev
@@ -141,8 +142,6 @@ if uploaded_file is not None:
             
             st.write("---")
             st.markdown("### 📊 Resultado del Análisis:")
-            
-            # --- 🧠 LÓGICA DE DETECCIÓN CALIBRADA CON AMPLIACIÓN DE INFORMACIÓN ---
             
             # CASO 1: POSIBLEMENTE MALIGNO (Umbral > 38.0)
             if irregularidad_bordes > 38.0 or diferencia_canales > 13.0:
@@ -199,7 +198,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 # 5. TARJETA: GUÍA DE PREVENCIÓN Y CUIDADO DE LA PIEL
 st.markdown('<div class="main-card">', unsafe_allow_html=True)
 
-# 🌟 ESPACIO RESERVADO PARA TU LEMA MAÑANA
 st.write("### 🌞 Guía de Prevención y Cuidado de la Piel")
 st.write("El cuidado preventivo es la herramienta más eficaz contra el daño fotocutáneo. Adopte estas pautas respaldadas por dermatólogos:")
 
@@ -225,4 +223,21 @@ st.markdown("""
 * **📏 D de Diámetro:** La lesión mide más de **6 milímetros** de ancho (aproximadamente el tamaño del borrador de un lápiz).
 * **📈 E de Evolución:** El lunar cambia de tamaño, forma o color, o presenta síntomas nuevos como picazón, sangrado o descamación.
 """)
+st.markdown('</div>', unsafe_allow_html=True)
+
+# 6. SECCIÓN DE ENCUESTA INTEGRADA CON EXPANDER LLAMATIVO
+st.markdown('<div class="main-card">', unsafe_allow_html=True)
+st.subheader("📝 ¡Ayúdame con tu opinión!")
+st.write("Tu feedback es súper importante para este proyecto escolar. ¿Me regalas 1 minuto respondiendo la encuesta?")
+
+# Usamos st.expander para que no ocupe toda la pantalla de golpe, con un título llamativo
+with st.expander("✨ Haz clic aquí para abrir la encuesta y dejar tu comentario 🚀"):
+    st.write("Completa el cuestionario directamente aquí abajo:")
+    
+    # El iframe del formulario correctamente insertado con width 100%
+    google_form_html = """
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLScdqQQujXFSfxWqmKzUyLeqmAdIcu7Den6ZaSO5TrkItXaWTg/viewform?embedded=true" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0">Cargando…</iframe>
+    """
+    components.html(google_form_html, height=800)
+
 st.markdown('</div>', unsafe_allow_html=True)
